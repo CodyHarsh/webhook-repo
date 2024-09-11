@@ -7,7 +7,7 @@ function EventList({ events }) {
     const formattedTimestamp = new Date(timestamp).toLocaleString('en-US', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
       hour12: true,
@@ -28,11 +28,12 @@ function EventList({ events }) {
 
   return (
     <div className='event-div'>
-        <h2>Repository Data</h2>
+        <h2 className='heading-line'>Repository Data</h2>
         <div className="event-list">
         {events.map((event, index) => (
             <div key={index} className={`event-item ${event.type.toLowerCase()}`}>
-            {formatEvent(event)}
+              {formatEvent(event)}
+              <div className='event-type-text'>{`${event.type.toUpperCase()}`}</div>
             </div>
         ))}
         </div>

@@ -59,7 +59,7 @@ def github_webhook():
 
 @app.route("/api/events", methods=['GET'])
 def get_events():
-    events = list(db.events.find({}, {'_id': 0}).sort('timestamp', -1).limit(10))
+    events = list(db.events.find({}, {'_id': 0}).sort('timestamp', -1))
     return jsonify(events)
 
 @app.route("/")
