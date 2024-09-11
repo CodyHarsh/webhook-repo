@@ -1,0 +1,32 @@
+.event-div{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+.event-list {
+    max-width: 90%;
+}
+  
+  .event-item {
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    padding: 10px;
+    color: black;
+  }
+  
+  .event-item.push {
+    border-left: 10px solid #4caf50;
+  }
+  
+  .event-item.pull_request {
+    border-left: 10px solid #2196f3;
+  }
+  
+  .event-item.merge {
+    border-left: 10px solid #ff9800;
+  }
+  

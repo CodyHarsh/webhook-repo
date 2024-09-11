@@ -1,9 +1,12 @@
 from flask import Flask, request, json, jsonify
 from pymongo import MongoClient
 from datetime import datetime
+from flask_cors import CORS
 import os
 
 app = Flask(__name__)
+CORS(app)
+
 
 database_url = os.getenv("MONGO_URI")
 
@@ -19,46 +22,40 @@ def process_webhook(event_type, payload):
             'type': 'PUSH',
             'author': payload['pusher']['name'],
             'to_branch': payload['ref'].split('/')[-1],
-            'timestamp': datetime.utcnow()
+            'timestamp': datetime.utcnow(),
+            'repo_name': payload['repository']['full_name']
         }
     elif event_type == 'pull_request':
-        if payload['action'] == 'opened':
-            return {
-                'type': 'PULL_REQUEST',
-                'author': payload['pull_request']['user']['login'],
-                'from_branch': payload['pull_request']['head']['ref'],
-                'to_branch': payload['pull_request']['base']['ref'],
-                'timestamp': datetime.fromisoformat(payload['pull_request']['created_at'].rstrip('Z'))
-            }
-        elif payload['action'] == 'closed' and payload['pull_request']['merged']:
-            return {
-                'type': 'MERGE',
-                'author': payload['pull_request']['merged_by']['login'],
-                'from_branch': payload['pull_request']['head']['ref'],
-                'to_branch': payload['pull_request']['base']['ref'],
-                'timestamp': datetime.fromisoformat(payload['pull_request']['merged_at'].rstrip('Z'))
-            }
+        action = payload['action']
+        pr = payload['pull_request']
+        event = {
+            'type': 'PULL_REQUEST',
+            'author': pr['user']['login'],
+            'from_branch': pr['head']['ref'],
+            'to_branch': pr['base']['ref'],
+            'timestamp': datetime.fromisoformat(pr['updated_at'].rstrip('Z')),
+            'repo_name': payload['repository']['full_name'],
+            'action': action
+        }
+        if action == 'closed' and pr['merged']:
+            event['type'] = 'MERGE'
+        return event
     return None
 
 @app.route("/webhook", methods=['POST'])
-def githubWebhook():
+def github_webhook():
     event_type = request.headers.get('X-GitHub-Event')
-    payload = request.get_json()
-    
-    print(f"Received event type: {event_type}")
-    print(f"Payload: {payload}")
+    payload = request.json
 
     if not event_type:
-        return 'Missing X-GitHub-Event header', 400
+        return jsonify({"error": "Missing X-GitHub-Event header"}), 400
 
     event = process_webhook(event_type, payload)
     if event:
         db.events.insert_one(event)
-        print(f"Processed event: {event}")
-        return 'Event processed successfully', 200
+        return jsonify({"message": "Event processed successfully"}), 200
     
-    print(f"Unhandled event type: {event_type}")
-    return 'Unhandled event type', 400
+    return jsonify({"error": "Unhandled event type"}), 400
 
 @app.route("/api/events", methods=['GET'])
 def get_events():
@@ -67,5 +64,4 @@ def get_events():
 
 @app.route("/")
 def hello_world():
-    return "<p>Hello, World!</p>"
-
+    return "<p>GitHub Webhook Receiver is running!</p>"
